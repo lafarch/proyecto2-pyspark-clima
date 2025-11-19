@@ -286,8 +286,8 @@ Todas las gráficas se guardan automáticamente en el directorio `resultados/`.
 ## Documentación
 
 - [Guía de instalación detallada](INSTALL.md) - Instrucciones paso a paso para configurar el entorno
-- [Documento completo del proyecto](docs/documento_proyecto.docx) - Informe académico de 10+ páginas
-- [Presentación del proyecto](docs/presentacion_proyecto.pptx) - Slides de presentación (6 diapositivas)
+- [Documento completo del proyecto](docs/documento_proyecto.md) - Informe académico de 10+ páginas
+- [Presentación del proyecto](docs/presentacion_proyecto.md) - Slides de presentación (6 diapositivas)
 
 ## Licencia
 

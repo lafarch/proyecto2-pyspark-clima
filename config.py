@@ -61,4 +61,4 @@ REQUISITOS = {
     "num_procesamientos": 5
 }
 
-print(f"✓ Configuración cargada desde: {BASE_DIR}")
+print(f"[OK] Configuración cargada desde: {BASE_DIR}")

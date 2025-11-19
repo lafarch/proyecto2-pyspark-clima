@@ -20,17 +20,17 @@ def verificar_tamaño_archivo(filepath, tamaño_min_gb=0.5):
         bool: True si cumple, False si no
     """
     if not os.path.exists(filepath):
-        print(f"❌ Archivo no encontrado: {filepath}")
+        print(f"[ERROR] Archivo no encontrado: {filepath}")
         return False
     
     tamaño_gb = os.path.getsize(filepath) / (1024**3)
-    print(f"📊 Tamaño del archivo: {tamaño_gb:.3f} GB")
+    print(f"[INFO] Tamaño del archivo: {tamaño_gb:.3f} GB")
     
     if tamaño_gb >= tamaño_min_gb:
-        print(f"✅ Cumple requisito mínimo ({tamaño_min_gb} GB)")
+        print(f"[OK] Cumple requisito mínimo ({tamaño_min_gb} GB)")
         return True
     else:
-        print(f"⚠️  No cumple requisito mínimo ({tamaño_min_gb} GB)")
+        print(f"[WARNING] No cumple requisito mínimo ({tamaño_min_gb} GB)")
         return False
 
 
@@ -44,7 +44,7 @@ def generar_muestra(filepath_entrada, filepath_salida, porcentaje=0.05, seed=42)
         porcentaje: Porcentaje de datos a muestrear (0.05 = 5%)
         seed: Semilla para reproducibilidad
     """
-    print(f"\n📝 Generando muestra del {porcentaje*100}%...")
+    print(f"\n[INFO] Generando muestra del {porcentaje*100}%...")
     
     # Leer con chunks para archivos grandes
     chunk_size = 100000
@@ -59,7 +59,7 @@ def generar_muestra(filepath_entrada, filepath_salida, porcentaje=0.05, seed=42)
     muestra.to_csv(filepath_salida, index=False)
     
     tamaño_mb = os.path.getsize(filepath_salida) / (1024**2)
-    print(f"✅ Muestra guardada: {filepath_salida}")
+    print(f"[OK] Muestra guardada: {filepath_salida}")
     print(f"   - Registros: {len(muestra):,}")
     print(f"   - Tamaño: {tamaño_mb:.2f} MB")
 
@@ -88,7 +88,7 @@ def guardar_estadisticas(stats_dict, filepath):
         for key, value in stats_dict.items():
             f.write(f"{key}: {value}\n")
     
-    print(f"✅ Estadísticas guardadas en: {filepath}")
+    print(f"[OK] Estadísticas guardadas en: {filepath}")
 
 
 def listar_archivos_datos(directorio):
@@ -96,10 +96,10 @@ def listar_archivos_datos(directorio):
     archivos = list(Path(directorio).glob("*.csv"))
     
     if not archivos:
-        print(f"⚠️  No se encontraron archivos CSV en {directorio}")
+        print(f"[WARNING] No se encontraron archivos CSV en {directorio}")
         return []
     
-    print(f"\n📁 Archivos encontrados en {directorio}:")
+    print(f"\n[INFO] Archivos encontrados en {directorio}:")
     total_size = 0
     
     for archivo in archivos:
@@ -107,7 +107,7 @@ def listar_archivos_datos(directorio):
         total_size += tamaño_mb
         print(f"   - {archivo.name} ({tamaño_mb:.2f} MB)")
     
-    print(f"\n📊 Total: {len(archivos)} archivos, {total_size:.2f} MB")
+    print(f"\n[INFO] Total: {len(archivos)} archivos, {total_size:.2f} MB")
     return archivos
 
 
@@ -115,21 +115,21 @@ def verificar_dependencias():
     """Verifica que todas las dependencias estén instaladas"""
     dependencias = ['pyspark', 'pandas', 'matplotlib', 'requests']
     
-    print("\n🔍 Verificando dependencias...")
+    print("\n[INFO] Verificando dependencias...")
     todas_ok = True
     
     for dep in dependencias:
         try:
             __import__(dep)
-            print(f"   ✅ {dep}")
+            print(f"   [OK] {dep}")
         except ImportError:
-            print(f"   ❌ {dep} - NO INSTALADO")
+            print(f"   [ERROR] {dep} - NO INSTALADO")
             todas_ok = False
     
     if todas_ok:
-        print("\n✅ Todas las dependencias están instaladas")
+        print("\n[OK] Todas las dependencias están instaladas")
     else:
-        print("\n❌ Faltan dependencias. Ejecuta: pip install -r requirements.txt")
+        print("\n[ERROR] Faltan dependencias. Ejecuta: pip install -r requirements.txt")
     
     return todas_ok
 
@@ -147,16 +147,16 @@ def limpiar_archivos_temporales(directorio="."):
         if path.exists():
             if path.is_file():
                 path.unlink()
-                print(f"🗑️  Eliminado: {item}")
+                print(f"[INFO] Eliminado: {item}")
             elif path.is_dir():
                 import shutil
                 shutil.rmtree(path)
-                print(f"🗑️  Eliminado directorio: {item}")
+                print(f"[INFO] Eliminado directorio: {item}")
 
 
 if __name__ == "__main__":
     # Test de funciones
-    print("🧪 Probando funciones auxiliares...")
+    print("[TEST] Probando funciones auxiliares...")
     verificar_dependencias()
     imprimir_banner("PROYECTO 2 - PYSPARK")
-    print("\n✅ Módulo utils.py funcionando correctamente")
+    print("\n[OK] Módulo utils.py funcionando correctamente")
