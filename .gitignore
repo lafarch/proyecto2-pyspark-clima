@@ -41,6 +41,7 @@ datos/*.csv
 datos_noaa/
 *.csv
 !muestra_datos.csv
+!datos/muestra_5porciento.csv ← EXCEPTO la muestra del 5%
 
 # Archivos temporales de Spark
 derby.log
