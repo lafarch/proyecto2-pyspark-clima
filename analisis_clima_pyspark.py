@@ -4,7 +4,7 @@ Dataset: NOAA Climate Data (GHCN-Daily)
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import *
+from pyspark.sql.functions import avg, max, min, stddev, count, sum, desc, col, when
 from pyspark.sql.types import *
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -26,18 +26,19 @@ plt.style.use('seaborn-v0_8-darkgrid')
 
 def inicializar_spark():
     """Inicializa y configura Spark Session"""
-    print("🚀 Inicializando Apache Spark...")
+    print("Inicializando Apache Spark...")
     
-    spark = SparkSession.builder \
-        .appName(SPARK_CONFIG['app_name']) \
-        .config("spark.driver.memory", SPARK_CONFIG['driver_memory']) \
-        .config("spark.sql.shuffle.partitions", "10") \
-        .getOrCreate()
+    # Crear builder de Spark
+    builder = SparkSession.builder
+    builder = builder.appName(SPARK_CONFIG['app_name'])
+    builder = builder.config("spark.driver.memory", SPARK_CONFIG['driver_memory'])
+    builder = builder.config("spark.sql.shuffle.partitions", "10")
+    spark = builder.getOrCreate()
     
     # Reducir verbosidad de logs
     spark.sparkContext.setLogLevel(SPARK_CONFIG['log_level'])
     
-    print(f"✅ Spark {spark.version} iniciado")
+    print(f"Spark {spark.version} iniciado")
     print(f"   App: {SPARK_CONFIG['app_name']}")
     print(f"   Memoria: {SPARK_CONFIG['driver_memory']}")
     
@@ -57,20 +58,25 @@ def cargar_datos(spark, filepath):
     """
     imprimir_banner("CARGA DE DATOS")
     
-    print(f"\n📂 Archivo: {filepath}")
+    print(f"\nArchivo: {filepath}")
+    
+    print("\n>>> Comando PySpark :")
+    print(f"df = spark.read.csv('{filepath}', header=True, inferSchema=True)")
     
     # Leer CSV
     df = spark.read.csv(str(filepath), header=True, inferSchema=True)
     
-    # Información básica
-    print(f"\n📊 Información del dataset:")
+    print("\n>>> df.count()")
+    print(f"\nInformación del dataset:")
     print(f"   - Total registros: {df.count():,}")
     print(f"   - Columnas: {len(df.columns)}")
     
-    print("\n📋 Esquema de datos:")
+    print("\n>>> df.printSchema()")
+    print("\nEsquema de datos:")
     df.printSchema()
     
-    print("\n🔍 Muestra de datos:")
+    print("\n>>> df.show(5, truncate=False)")
+    print("\nMuestra de datos:")
     df.show(5, truncate=False)
     
     return df
@@ -83,6 +89,18 @@ def procesamiento_1_temperatura_mensual(df):
     """
     imprimir_banner("PROCESAMIENTO 1: TEMPERATURA MENSUAL")
     
+    print("\n>>> Comando PySpark :")
+    print("temp_mensual = df.groupBy('STATION', 'YEAR', 'MONTH') \\")
+    print("    .agg(")
+    print("        avg('TEMP').alias('temp_promedio'),")
+    print("        max('TEMP').alias('temp_maxima'),")
+    print("        min('TEMP').alias('temp_minima'),")
+    print("        stddev('TEMP').alias('desv_std'),")
+    print("        count('*').alias('num_registros')")
+    print("    ) \\")
+    print("    .orderBy('YEAR', 'MONTH')")
+    print("\n>>> temp_mensual.show(15)")
+    
     # Agregación con PySpark
     temp_mensual = df.groupBy("STATION", "YEAR", "MONTH") \
         .agg(
@@ -94,7 +112,7 @@ def procesamiento_1_temperatura_mensual(df):
         ) \
         .orderBy("YEAR", "MONTH")
     
-    print("\n📈 Resultados:")
+    print("\nResultados:")
     temp_mensual.show(15)
     
     # Convertir a Pandas solo los datos agregados (pequeños)
@@ -125,7 +143,7 @@ def procesamiento_1_temperatura_mensual(df):
     plt.savefig(output_path, dpi=GRAFICAS_CONFIG['dpi'])
     plt.close()
     
-    print(f"\n✅ Gráfica guardada: {output_path}")
+    print(f"\nGráfica guardada: {output_path}")
     
     return temp_mensual
 
@@ -136,6 +154,18 @@ def procesamiento_2_precipitacion_anual(df):
     Calcula estadísticas anuales de precipitación
     """
     imprimir_banner("PROCESAMIENTO 2: PRECIPITACIÓN ANUAL")
+    
+    print("\n>>> Comando PySpark :")
+    print("precip_anual = df.groupBy('YEAR') \\")
+    print("    .agg(")
+    print("        sum('PRCP').alias('precip_total'),")
+    print("        avg('PRCP').alias('precip_promedio'),")
+    print("        stddev('PRCP').alias('desviacion_std'),")
+    print("        max('PRCP').alias('precip_maxima'),")
+    print("        count('*').alias('num_registros')")
+    print("    ) \\")
+    print("    .orderBy('YEAR')")
+    print("\n>>> precip_anual.show()")
     
     # Agregación con PySpark
     precip_anual = df.groupBy("YEAR") \
@@ -148,7 +178,7 @@ def procesamiento_2_precipitacion_anual(df):
         ) \
         .orderBy("YEAR")
     
-    print("\n📊 Resultados:")
+    print("\nResultados:")
     precip_anual.show()
     
     # Convertir a Pandas
@@ -178,7 +208,7 @@ def procesamiento_2_precipitacion_anual(df):
     plt.savefig(output_path, dpi=GRAFICAS_CONFIG['dpi'])
     plt.close()
     
-    print(f"\n✅ Gráfica guardada: {output_path}")
+    print(f"\nGráfica guardada: {output_path}")
     
     return precip_anual
 
@@ -189,6 +219,18 @@ def procesamiento_3_extremos_climaticos(df):
     Identifica récords de temperatura y precipitación
     """
     imprimir_banner("PROCESAMIENTO 3: EXTREMOS CLIMÁTICOS")
+    
+    print("\n>>> Comando PySpark :")
+    print("extremos = df.groupBy('STATION') \\")
+    print("    .agg(")
+    print("        max('TEMP').alias('temp_record_max'),")
+    print("        min('TEMP').alias('temp_record_min'),")
+    print("        max('PRCP').alias('precip_record'),")
+    print("        avg('TEMP').alias('temp_media'),")
+    print("        count('*').alias('num_observaciones')")
+    print("    ) \\")
+    print("    .orderBy(desc('temp_record_max'))")
+    print("\n>>> extremos.show(10, truncate=False)")
     
     # Agregación con PySpark
     extremos = df.groupBy("STATION") \
@@ -201,7 +243,7 @@ def procesamiento_3_extremos_climaticos(df):
         ) \
         .orderBy(desc("temp_record_max"))
     
-    print("\n🌡️  Resultados (Top 10 estaciones):")
+    print("\nResultados (Top 10 estaciones):")
     extremos.show(10, truncate=False)
     
     # Convertir a Pandas
@@ -232,7 +274,7 @@ def procesamiento_3_extremos_climaticos(df):
     plt.savefig(output_path, dpi=GRAFICAS_CONFIG['dpi'])
     plt.close()
     
-    print(f"\n✅ Gráfica guardada: {output_path}")
+    print(f"\nGráfica guardada: {output_path}")
     
     return extremos
 
@@ -243,6 +285,23 @@ def procesamiento_4_analisis_estacional(df):
     Compara variables climáticas por estación del año
     """
     imprimir_banner("PROCESAMIENTO 4: ANÁLISIS ESTACIONAL")
+    
+    print("\n>>> Comando PySpark :")
+    print("df_season = df.withColumn('SEASON',")
+    print("    when((col('MONTH') >= 3) & (col('MONTH') <= 5), 'Primavera')")
+    print("    .when((col('MONTH') >= 6) & (col('MONTH') <= 8), 'Verano')")
+    print("    .when((col('MONTH') >= 9) & (col('MONTH') <= 11), 'Otoño')")
+    print("    .otherwise('Invierno')")
+    print(")")
+    print("\nestacional = df_season.groupBy('SEASON') \\")
+    print("    .agg(")
+    print("        avg('TEMP').alias('temp_promedio'),")
+    print("        avg('PRCP').alias('precip_promedio'),")
+    print("        max('TEMP').alias('temp_maxima'),")
+    print("        min('TEMP').alias('temp_minima'),")
+    print("        count('*').alias('num_observaciones')")
+    print("    )")
+    print("\n>>> estacional.show()")
     
     # Definir estaciones del año con PySpark
     df_season = df.withColumn("SEASON", 
@@ -262,7 +321,7 @@ def procesamiento_4_analisis_estacional(df):
             count("*").alias("num_observaciones")
         )
     
-    print("\n🍂 Resultados por estación del año:")
+    print("\nResultados por estación del año:")
     estacional.show()
     
     # Convertir a Pandas
@@ -294,7 +353,7 @@ def procesamiento_4_analisis_estacional(df):
     for bar in bars1:
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:.1f}°C', ha='center', va='bottom', fontsize=10)
+                f'{height:.1f}C', ha='center', va='bottom', fontsize=10)
     
     # Precipitación por estación
     bars2 = ax2.bar(estacional_pandas['SEASON'], estacional_pandas['precip_promedio'], 
@@ -315,7 +374,7 @@ def procesamiento_4_analisis_estacional(df):
     plt.savefig(output_path, dpi=GRAFICAS_CONFIG['dpi'])
     plt.close()
     
-    print(f"\n✅ Gráfica guardada: {output_path}")
+    print(f"\nGráfica guardada: {output_path}")
     
     return estacional
 
@@ -327,6 +386,16 @@ def procesamiento_5_tendencia_correlacion(df):
     """
     imprimir_banner("PROCESAMIENTO 5: TENDENCIAS Y CORRELACIÓN")
     
+    print("\n>>> Comando PySpark :")
+    print("tendencia = df.groupBy('YEAR') \\")
+    print("    .agg(")
+    print("        avg('TEMP').alias('temp_anual'),")
+    print("        avg('PRCP').alias('precip_anual'),")
+    print("        count('*').alias('num_registros')")
+    print("    ) \\")
+    print("    .orderBy('YEAR')")
+    print("\n>>> tendencia.show()")
+    
     # Tendencia anual
     tendencia = df.groupBy("YEAR") \
         .agg(
@@ -336,17 +405,21 @@ def procesamiento_5_tendencia_correlacion(df):
         ) \
         .orderBy("YEAR")
     
-    print("\n📈 Tendencia anual:")
+    print("\nTendencia anual:")
     tendencia.show()
+    
+    print("\n>>> Comando PySpark :")
+    print("correlacion = df.stat.corr('TEMP', 'PRCP')")
     
     # Calcular correlación con PySpark
     correlacion = df.stat.corr("TEMP", "PRCP")
-    print(f"\n🔗 Coeficiente de Correlación Temperatura-Precipitación: {correlacion:.4f}")
+    print(f"\nCoeficiente de Correlación Temperatura-Precipitación: {correlacion:.4f}")
     
-    # Interpretación
-    if abs(correlacion) < 0.3:
+    # Interpretación - usar abs() de Python, no de PySpark
+    import builtins
+    if builtins.abs(correlacion) < 0.3:
         interpretacion = "débil"
-    elif abs(correlacion) < 0.7:
+    elif builtins.abs(correlacion) < 0.7:
         interpretacion = "moderada"
     else:
         interpretacion = "fuerte"
@@ -391,22 +464,22 @@ def procesamiento_5_tendencia_correlacion(df):
     plt.savefig(output_path, dpi=GRAFICAS_CONFIG['dpi'])
     plt.close()
     
-    print(f"\n✅ Gráfica guardada: {output_path}")
+    print(f"\nGráfica guardada: {output_path}")
     
     return tendencia, correlacion
 
 
 def main():
     """Función principal"""
-    print("\n" + "⚡" * 30)
+    print("\n" + "="*60)
     print("PROYECTO 2 - ANÁLISIS CLIMÁTICO CON PYSPARK".center(60))
-    print("⚡" * 30 + "\n")
+    print("="*60 + "\n")
     
     try:
         # Verificar que existen los datos
         if not DATOS_PROCESADOS.exists():
-            print(f"❌ Archivo no encontrado: {DATOS_PROCESADOS}")
-            print("\n⚠️  Primero ejecuta: python descargar_datos_noaa.py")
+            print(f"Archivo no encontrado: {DATOS_PROCESADOS}")
+            print("\nPrimero ejecuta: python descargar_datos_noaa.py")
             return
         
         # 1. Inicializar Spark
@@ -427,15 +500,23 @@ def main():
         resultado5, correlacion = procesamiento_5_tendencia_correlacion(df)
         
         # 4. Resumen final
-        imprimir_banner("✅ ANÁLISIS COMPLETADO")
+        imprimir_banner("ANÁLISIS COMPLETADO")
         
-        print(f"\n📊 Resumen de resultados:")
+        print(f"\nResumen de resultados:")
         print(f"   - Total de registros procesados: {df.count():,}")
-        print(f"   - Procesamiento completados: 5/5")
+        print(f"   - Procesamientos completados: 5/5")
         print(f"   - Gráficas generadas: 5")
         print(f"   - Directorio de resultados: {RESULTADOS_DIR}")
         
-        print(f"\n📈 Estadísticas generales:")
+        print(f"\n>>> Comando PySpark :")
+        print("df.select(")
+        print("    avg('TEMP').alias('temp_promedio'),")
+        print("    max('TEMP').alias('temp_maxima'),")
+        print("    min('TEMP').alias('temp_minima'),")
+        print("    avg('PRCP').alias('precip_promedio')")
+        print(").show()")
+        
+        print(f"\nEstadísticas generales:")
         df.select(
             avg("TEMP").alias("temp_promedio"),
             max("TEMP").alias("temp_maxima"),
@@ -443,27 +524,21 @@ def main():
             avg("PRCP").alias("precip_promedio")
         ).show()
         
-        print(f"\n🎯 Próximos pasos:")
-        print(f"   1. Revisar gráficas en: {RESULTADOS_DIR}/")
-        print(f"   2. Incluir resultados en el documento Word")
-        print(f"   3. Preparar presentación con las gráficas")
-        print(f"   4. Generar muestra 5% para entrega")
-        
         # 5. Cerrar Spark
         spark.stop()
-        print(f"\n✅ Sesión Spark finalizada")
+        print(f"\nSesión Spark finalizada")
         
         # 6. Limpiar archivos temporales
         limpiar_archivos_temporales()
         
     except Exception as e:
-        print(f"\n❌ Error durante el análisis: {e}")
+        print(f"\nError durante el análisis: {e}")
         import traceback
         traceback.print_exc()
     
-    print("\n" + "🎉" * 30)
+    print("\n" + "="*60)
     print("FIN DEL ANÁLISIS".center(60))
-    print("🎉" * 30 + "\n")
+    print("="*60 + "\n")
 
 
 if __name__ == "__main__":

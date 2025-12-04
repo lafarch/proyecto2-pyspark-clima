@@ -37,7 +37,7 @@ def descargar_estacion(estacion, output_dir):
         url = f"{NOAA_BASE_URL}{estacion}.csv"
         filename = output_dir / f"{estacion}.csv"
         
-        print(f"📥 Descargando {estacion}...", end=" ", flush=True)
+        print(f"Descargando {estacion}...", end=" ", flush=True)
         
         response = requests.get(url, stream=True, timeout=60)
         
@@ -47,14 +47,14 @@ def descargar_estacion(estacion, output_dir):
                     f.write(chunk)
             
             tamaño_mb = os.path.getsize(filename) / (1024 * 1024)
-            print(f"✅ ({tamaño_mb:.1f} MB)")
+            print(f"OK ({tamaño_mb:.1f} MB)")
             return filename
         else:
-            print(f"❌ Error {response.status_code}")
+            print(f"ERROR {response.status_code}")
             return None
             
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"ERROR: {str(e)}")
         return None
 
 
@@ -71,8 +71,8 @@ def descargar_todas_estaciones():
     datos_noaa_dir = DATOS_DIR / "datos_noaa"
     datos_noaa_dir.mkdir(exist_ok=True)
     
-    print(f"\n📍 Descargando {len(ESTACIONES_NOAA)} estaciones meteorológicas")
-    print(f"📂 Destino: {datos_noaa_dir}\n")
+    print(f"\nDescargando {len(ESTACIONES_NOAA)} estaciones meteorológicas")
+    print(f"Destino: {datos_noaa_dir}\n")
     
     archivos_descargados = []
     
@@ -85,15 +85,15 @@ def descargar_todas_estaciones():
     
     # Resumen
     imprimir_banner("RESUMEN DE DESCARGA")
-    print(f"\n✅ Archivos descargados: {len(archivos_descargados)}/{len(ESTACIONES_NOAA)}")
+    print(f"\nArchivos descargados: {len(archivos_descargados)}/{len(ESTACIONES_NOAA)}")
     
     tamaño_total_gb = sum(os.path.getsize(f) for f in archivos_descargados) / (1024**3)
-    print(f"📊 Tamaño total: {tamaño_total_gb:.2f} GB")
+    print(f"Tamaño total: {tamaño_total_gb:.2f} GB")
     
     if tamaño_total_gb >= REQUISITOS['tamaño_minimo_gb']:
-        print(f"✅ Cumple requisito mínimo (>{REQUISITOS['tamaño_minimo_gb']} GB)")
+        print(f"Cumple requisito mínimo (>{REQUISITOS['tamaño_minimo_gb']} GB)")
     else:
-        print(f"⚠️  Advertencia: Tamaño menor a {REQUISITOS['tamaño_minimo_gb']} GB")
+        print(f"Advertencia: Tamaño menor a {REQUISITOS['tamaño_minimo_gb']} GB")
         print("   Considera descargar más estaciones")
     
     return archivos_descargados
@@ -110,12 +110,12 @@ def unificar_archivos(archivos):
         str: Path del archivo unificado
     """
     if not archivos:
-        print("❌ No hay archivos para unificar")
+        print("No hay archivos para unificar")
         return None
     
     imprimir_banner("UNIFICACIÓN DE ARCHIVOS")
     
-    print(f"\n🔄 Unificando {len(archivos)} archivos...")
+    print(f"\nUnificando {len(archivos)} archivos...")
     
     dfs = []
     for archivo in archivos:
@@ -124,26 +124,26 @@ def unificar_archivos(archivos):
             columnas = ['STATION', 'DATE', 'TMAX', 'TMIN', 'PRCP']
             df = pd.read_csv(archivo, usecols=lambda x: x in columnas)
             dfs.append(df)
-            print(f"   ✅ {Path(archivo).name}: {len(df):,} registros")
+            print(f"   OK {Path(archivo).name}: {len(df):,} registros")
         except Exception as e:
-            print(f"   ❌ Error en {Path(archivo).name}: {e}")
+            print(f"   ERROR en {Path(archivo).name}: {e}")
     
     if not dfs:
-        print("❌ No se pudo leer ningún archivo")
+        print("No se pudo leer ningún archivo")
         return None
     
     # Combinar todos los DataFrames
-    print("\n🔄 Combinando datos...")
+    print("\nCombinando datos...")
     df_unificado = pd.concat(dfs, ignore_index=True)
     
     # Guardar archivo unificado
-    print(f"💾 Guardando archivo unificado...")
+    print(f"Guardando archivo unificado...")
     df_unificado.to_csv(DATOS_CRUDOS, index=False)
     
-    print(f"\n✅ Archivo unificado creado: {DATOS_CRUDOS.name}")
-    print(f"   📊 Registros totales: {len(df_unificado):,}")
-    print(f"   📅 Periodo: {df_unificado['DATE'].min()} a {df_unificado['DATE'].max()}")
-    print(f"   📏 Columnas: {list(df_unificado.columns)}")
+    print(f"\nArchivo unificado creado: {DATOS_CRUDOS.name}")
+    print(f"   Registros totales: {len(df_unificado):,}")
+    print(f"   Periodo: {df_unificado['DATE'].min()} a {df_unificado['DATE'].max()}")
+    print(f"   Columnas: {list(df_unificado.columns)}")
     
     # Verificar tamaño
     verificar_tamaño_archivo(DATOS_CRUDOS, REQUISITOS['tamaño_minimo_gb'])
@@ -162,27 +162,34 @@ def preparar_datos_para_pyspark(archivo):
         str: Path del archivo procesado
     """
     if not archivo or not os.path.exists(archivo):
-        print(f"❌ Archivo no encontrado: {archivo}")
+        print(f"Archivo no encontrado: {archivo}")
         return None
     
     imprimir_banner("PREPARACIÓN PARA PYSPARK")
     
-    print("\n📖 Leyendo datos...")
+    print("\nLeyendo datos...")
     df = pd.read_csv(archivo)
     
     print(f"   Registros iniciales: {len(df):,}")
     
     # Limpieza de datos
-    print("\n🧹 Limpiando datos...")
+    print("\nLimpiando datos...")
     
     # 1. Eliminar filas con valores nulos en columnas críticas
     antes = len(df)
     df = df.dropna(subset=['TMAX', 'TMIN', 'PRCP'])
-    print(f"   ✅ Eliminadas {antes - len(df):,} filas con valores nulos")
+    print(f"   Eliminadas {antes - len(df):,} filas con valores nulos")
     
     # 2. Convertir fechas y extraer componentes
-    print("   🗓️  Procesando fechas...")
-    df['DATE'] = pd.to_datetime(df['DATE'])
+    print("   Procesando fechas...")
+    df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
+    
+    # Eliminar filas con fechas inválidas
+    antes_fecha = len(df)
+    df = df.dropna(subset=['DATE'])
+    if antes_fecha > len(df):
+        print(f"   Eliminadas {antes_fecha - len(df):,} filas con fechas inválidas")
+    
     df['YEAR'] = df['DATE'].dt.year
     df['MONTH'] = df['DATE'].dt.month
     df['DAY'] = df['DATE'].dt.day
@@ -199,33 +206,33 @@ def preparar_datos_para_pyspark(archivo):
     df['PRCP'] = df['PRCP'] / 10
     
     # Información del dataset procesado
-    print(f"\n📊 Dataset procesado:")
+    print(f"\nDataset procesado:")
     print(f"   - Registros: {len(df):,}")
     print(f"   - Periodo: {df['YEAR'].min()} - {df['YEAR'].max()} ({df['YEAR'].max() - df['YEAR'].min() + 1} años)")
     print(f"   - Estaciones: {df['STATION'].nunique()}")
     print(f"   - Columnas: {list(df.columns)}")
     
     # Estadísticas rápidas
-    print(f"\n📈 Estadísticas:")
-    print(f"   - Temperatura promedio: {df['TEMP'].mean():.1f}°C")
-    print(f"   - Temp. máxima record: {df['TMAX'].max():.1f}°C")
-    print(f"   - Temp. mínima record: {df['TMIN'].min():.1f}°C")
+    print(f"\nEstadísticas:")
+    print(f"   - Temperatura promedio: {df['TEMP'].mean():.1f} C")
+    print(f"   - Temp. máxima record: {df['TMAX'].max():.1f} C")
+    print(f"   - Temp. mínima record: {df['TMIN'].min():.1f} C")
     print(f"   - Precipitación promedio: {df['PRCP'].mean():.2f} mm/día")
     
     # Guardar archivo procesado
-    print(f"\n💾 Guardando datos procesados...")
+    print(f"\nGuardando datos procesados...")
     df.to_csv(DATOS_PROCESADOS, index=False)
     
-    print(f"\n✅ Datos listos para PySpark: {DATOS_PROCESADOS.name}")
+    print(f"\nDatos listos para PySpark: {DATOS_PROCESADOS.name}")
     
     return DATOS_PROCESADOS
 
 
 def main():
     """Función principal"""
-    print("\n" + "🌤️ " * 20)
-    print("PROYECTO 2 - DESCARGA Y PREPARACIÓN DE DATOS NOAA".center(80))
-    print("🌤️ " * 20 + "\n")
+    print("\n" + "=" * 60)
+    print("PROYECTO 2 - DESCARGA Y PREPARACIÓN DE DATOS NOAA".center(60))
+    print("=" * 60 + "\n")
     
     try:
         # Paso 1: Descargar datos
@@ -233,7 +240,7 @@ def main():
         archivos = descargar_todas_estaciones()
         
         if not archivos:
-            print("\n❌ No se descargaron archivos. Verifica tu conexión a internet.")
+            print("\nNo se descargaron archivos. Verifica tu conexión a internet.")
             return
         
         # Paso 2: Unificar archivos
@@ -242,7 +249,7 @@ def main():
         archivo_unificado = unificar_archivos(archivos)
         
         if not archivo_unificado:
-            print("\n❌ Error al unificar archivos")
+            print("\nError al unificar archivos")
             return
         
         # Paso 3: Preparar para PySpark
@@ -251,24 +258,24 @@ def main():
         archivo_final = preparar_datos_para_pyspark(archivo_unificado)
         
         if not archivo_final:
-            print("\n❌ Error al preparar datos")
+            print("\nError al preparar datos")
             return
         
         # Resumen final
-        imprimir_banner("✅ PROCESO COMPLETADO")
-        print(f"\n📁 Archivos generados:")
+        imprimir_banner("PROCESO COMPLETADO")
+        print(f"\nArchivos generados:")
         print(f"   1. Datos crudos: {DATOS_CRUDOS}")
         print(f"   2. Datos procesados: {DATOS_PROCESADOS}")
         
-        print(f"\n🚀 Próximos pasos:")
+        print(f"\nPróximos pasos:")
         print(f"   1. Ejecutar: python analisis_clima_pyspark.py")
         print(f"   2. Revisar gráficas generadas en: resultados/")
         print(f"   3. Generar muestra 5% con: utils.generar_muestra()")
         
     except KeyboardInterrupt:
-        print("\n\n⚠️  Proceso interrumpido por el usuario")
+        print("\n\nProceso interrumpido por el usuario")
     except Exception as e:
-        print(f"\n❌ Error inesperado: {e}")
+        print(f"\nError inesperado: {e}")
         import traceback
         traceback.print_exc()
 
