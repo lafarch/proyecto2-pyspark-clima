@@ -21,9 +21,16 @@ Este proyecto procesa y analiza más de 0.5 GB de datos climáticos históricos 
 
 ## Instalación
 
-### Método 1: Instalación Local
+### Método 1: Instalación Local, desde terminal de WSL
 
 ```bash
+# Verificar que Java está instalado
+java -version
+
+# Debe mostrar algo como:
+# openjdk version "11.0.x"
+# Si aparece "command not found", debes instalarlo.
+
 # Clonar repositorio
 git clone https://github.com/lafarch/proyecto2-pyspark-clima.git
 cd proyecto2-pyspark-clima
@@ -32,10 +39,6 @@ cd proyecto2-pyspark-clima
 python -m venv .venv
 
 # Activar entorno virtual
-# En Windows PowerShell:
-.venv\Scripts\Activate.ps1
-# En Windows CMD:
-.venv\Scripts\activate.bat
 # En Mac/Linux:
 source .venv/bin/activate
 
@@ -44,9 +47,18 @@ pip install -r requirements.txt
 
 # Verificar instalación
 python utils.py
+
+#Deberías ver:
+#Verificando dependencias...
+#   ✓ pyspark
+#   ✓ pandas
+#   ✓ matplotlib
+#   ✓ requests
+
+#✓ Todas las dependencias están instaladas
 ```
 
-### Método 2: Usando Docker (Recomendado)
+### Método 2: Usando Docker
 
 ```bash
 # Construir imagen
@@ -56,71 +68,32 @@ docker-compose build
 docker-compose run pyspark-app python utils.py
 ```
 
-## Ejecución
+## Ejecución del proyecto
 
-### Usando Python Local
-
-```bash
-# Paso 1: Descargar datos de NOAA (10-15 minutos)
-python descargar_datos_noaa.py
-
-# Paso 2: Ejecutar análisis con PySpark (5-10 minutos)
-python analisis_clima_pyspark.py
-
-# Paso 3: Generar muestra del 5% para entrega
-make muestra
-# O alternativamente:
-python -c "from utils import generar_muestra; from config import DATOS_PROCESADOS, MUESTRA_5PCT; generar_muestra(DATOS_PROCESADOS, MUESTRA_5PCT)"
-
-# Ver resultados
-ls resultados/
-```
-
-### Usando Docker
-
-```bash
-# Descargar datos
-docker-compose run pyspark-app python descargar_datos_noaa.py
-
-# Ejecutar análisis
-docker-compose run pyspark-app python analisis_clima_pyspark.py
-
-# Generar muestra 5%
-docker-compose run pyspark-app make muestra
-
-# Ver resultados (están en tu carpeta local)
-ls resultados/
-
-# Limpiar contenedores
-docker-compose down
-```
-
-### Usando Makefile (Atajos)
-
+### Usando Makefile (Más fácil)
 ```bash
 # Ver todos los comandos disponibles
 make help
 
-# Instalar dependencias
-make install
-
-# Ejecutar pipeline completo (descarga + análisis)
+# Ejecutar TODO (descarga + análisis)
 make all
 
-# Solo descargar datos
-make download
+# O paso por paso:
+make download    # Solo descargar datos (10-15 min)
+make analyze     # Solo ejecutar análisis (5-10 min)
+make muestra     # Generar muestra del 5% para entrega
+```
+alternativa Manualmente
+```bash
+# Paso 1: Descargar datos de NOAA
+python descargar_datos_noaa.py
 
-# Solo ejecutar análisis
-make analyze
+# Paso 2: Ejecutar análisis con PySpark
+python analisis_clima_pyspark.py
 
-# Generar muestra 5%
-make muestra
+# Paso 3: Generar muestra del 5%
+python -c "from utils import generar_muestra; from config import DATOS_PROCESADOS, MUESTRA_5PCT; generar_muestra(DATOS_PROCESADOS, MUESTRA_5PCT)"
 
-# Limpiar archivos temporales
-make clean
-
-# Verificar instalación
-make test
 ```
 
 ## Estructura del Proyecto
